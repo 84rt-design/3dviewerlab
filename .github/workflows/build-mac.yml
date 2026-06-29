@@ -34,7 +34,7 @@ jobs:
           test -f dist-electron/main.js || (echo "electron main missing" && exit 1)
           echo "smoke ok"
 
-      - name: Package macOS (arm64 ZIP, ad-hoc signed)
+      - name: Package macOS (DMG + ZIP, arm64, ad-hoc signed)
         run: npx electron-builder --mac --arm64 2>&1 | tee eb.log
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false   # no Apple cert; ad-hoc sign only
@@ -75,7 +75,7 @@ jobs:
             wait "$PID"; exit 1
           fi
 
-      - name: Upload artifact
+      - name: Upload artifact (zipped by GitHub — fallback)
         uses: actions/upload-artifact@v4
         with:
           name: 3dviewerLAB-macOS
@@ -83,3 +83,14 @@ jobs:
             release/*.dmg
             release/*.zip
           if-no-files-found: error
+
+      # Direct .dmg download (no GitHub zip wrapper) via a rolling Release.
+      - name: Publish DMG to "mac-latest" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mac-latest
+          name: macOS (latest build)
+          prerelease: true
+          files: |
+            release/*.dmg
+            release/*.zip
