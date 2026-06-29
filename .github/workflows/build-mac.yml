@@ -34,11 +34,27 @@ jobs:
           test -f dist-electron/main.js || (echo "electron main missing" && exit 1)
           echo "smoke ok"
 
-      - name: Package macOS (DMG + ZIP, arm64, ad-hoc signed)
-        run: npx electron-builder --mac --arm64 2>&1 | tee eb.log
+      # DMG creation on macOS runners hits an intermittent hdiutil race:
+      # XProtect/Spotlight locks the freshly-made disk image -> "Resource busy".
+      # Mitigate: turn off Spotlight indexing, then retry with stale-mount cleanup.
+      - name: Disable Spotlight (avoid hdiutil volume-lock race)
+        run: sudo mdutil -a -i off || true
+
+      - name: Package macOS (DMG + ZIP, arm64) — hdiutil retry loop
+        shell: bash
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false   # no Apple cert; ad-hoc sign only
           DEBUG: electron-builder
+        run: |
+          set -o pipefail                      # propagate electron-builder exit, not tee's
+          max=6; i=0
+          until npx electron-builder --mac --arm64 2>&1 | tee eb.log; do
+            i=$((i+1))
+            if [ "$i" -ge "$max" ]; then echo "DMG build failed after $max attempts"; exit 1; fi
+            echo "::warning::build failed (hdiutil race?), retry $i/$max — clearing stale mounts"
+            for v in /Volumes/*; do hdiutil detach -force "$v" 2>/dev/null || true; done
+            sleep 5
+          done
 
       - name: Show error tail on failure
         if: failure()
