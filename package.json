@@ -30,14 +30,12 @@
     "files": ["dist/**/*", "dist-electron/**/*"],
     "mac": {
       "target": [
-        { "target": "dmg", "arch": "arm64" },
         { "target": "zip", "arch": "arm64" }
       ],
       "category": "public.app-category.graphics-design",
       "identity": null,
       "artifactName": "3dviewerLAB-${arch}.${ext}"
     },
-    "dmg": { "title": "3dviewerLAB" },
     "win": { "target": ["portable"] },
     "portable": { "artifactName": "3dviewerLAB-portable.exe" }
   }

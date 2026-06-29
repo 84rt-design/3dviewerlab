@@ -9,9 +9,12 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+permissions:
+  contents: write                  # allow pushing the debug log on failure
+
 jobs:
   build-mac:
-    runs-on: macos-latest          # Apple Silicon (arm64); we build universal
+    runs-on: macos-latest          # Apple Silicon (arm64)
     steps:
       - uses: actions/checkout@v4
 
@@ -31,10 +34,30 @@ jobs:
           test -f dist-electron/main.js || (echo "electron main missing" && exit 1)
           echo "smoke ok"
 
-      - name: Package macOS (universal DMG + ZIP, ad-hoc signed)
-        run: npx electron-builder --mac
+      - name: Package macOS (arm64 ZIP, ad-hoc signed)
+        run: npx electron-builder --mac --arm64 2>&1 | tee eb.log
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false   # no Apple cert; ad-hoc sign only
+          DEBUG: electron-builder
+
+      - name: Show error tail on failure
+        if: failure()
+        run: |
+          echo "===== electron-builder log tail ====="
+          tail -60 eb.log || true
+          echo "===== builder-debug.yml ====="
+          cat release/builder-debug.yml 2>/dev/null || echo "(none)"
+
+      - name: Publish debug log on failure (ci-debug branch)
+        if: failure()
+        run: |
+          mkdir -p _ci && cp eb.log _ci/eb.log 2>/dev/null || true
+          cp release/builder-debug.yml _ci/builder-debug.yml 2>/dev/null || true
+          cd _ci
+          git init -q
+          git config user.email ci@local && git config user.name ci
+          git add -A && git commit -q -m "ci debug $GITHUB_RUN_ID" || true
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:ci-debug
 
       - name: BOOT CHECK — launch the .app 12s on this Mac
         run: |
