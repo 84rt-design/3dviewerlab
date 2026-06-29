@@ -1,15 +1,17 @@
 name: Build macOS
 
-# Build the macOS DMG + ZIP on Apple's free macOS runner.
-# Trigger: push a tag like v0.1.0, or run manually from the Actions tab.
+# A real Mac (Apple cloud runner) builds + boot-tests the .app on every push.
+# No local Mac needed: the runner launches the built app and fails the run if
+# it crashes at startup — same idea as the A.C.Lib boot check.
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
 jobs:
   build-mac:
-    runs-on: macos-latest
+    runs-on: macos-latest          # Apple Silicon (arm64); we build universal
     steps:
       - uses: actions/checkout@v4
 
@@ -20,15 +22,40 @@ jobs:
       - name: Install deps
         run: npm ci || npm install
 
-      - name: Build macOS (universal DMG + ZIP, unsigned)
-        run: npm run dist:mac
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false   # skip signing
+      - name: Build renderer (vite)
+        run: npm run build
 
-      - name: Upload artifacts
+      - name: SMOKE TEST — renderer bundle exists
+        run: |
+          test -f dist/index.html || (echo "renderer build missing" && exit 1)
+          test -f dist-electron/main.js || (echo "electron main missing" && exit 1)
+          echo "smoke ok"
+
+      - name: Package macOS (universal DMG + ZIP, ad-hoc signed)
+        run: npx electron-builder --mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false   # no Apple cert; ad-hoc sign only
+
+      - name: BOOT CHECK — launch the .app 12s on this Mac
+        run: |
+          APP=$(find release -maxdepth 3 -name "*.app" | head -1)
+          echo "Booting: $APP"
+          BIN="$APP/Contents/MacOS/$(basename "$APP" .app)"
+          "$BIN" --disable-gpu &
+          PID=$!
+          sleep 12
+          if kill -0 "$PID" 2>/dev/null; then
+            echo "✓ app alive after 12s"
+            kill "$PID" 2>/dev/null || true
+          else
+            echo "✗ app exited early — startup crash"
+            wait "$PID"; exit 1
+          fi
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 3dviewerLAB-macos
+          name: 3dviewerLAB-macOS
           path: |
             release/*.dmg
             release/*.zip
