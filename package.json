@@ -1,0 +1,44 @@
+{
+  "name": "3dviewerlab",
+  "version": "0.1.0",
+  "description": "3dviewerLAB — dark 3D viewer/editor for STEP, OBJ, FBX models",
+  "main": "dist-electron/main.js",
+  "author": "Little Agency",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dist": "vite build && electron-builder",
+    "dist:win": "vite build && electron-builder --win",
+    "dist:mac": "vite build && electron-builder --mac"
+  },
+  "dependencies": {
+    "occt-import-js": "^0.0.23",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.4.0",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  },
+  "build": {
+    "appId": "fr.littleagency.3dviewerlab",
+    "productName": "3dviewerLAB",
+    "directories": { "output": "release" },
+    "files": ["dist/**/*", "dist-electron/**/*"],
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": "universal" },
+        { "target": "zip", "arch": "universal" }
+      ],
+      "category": "public.app-category.graphics-design",
+      "identity": null,
+      "artifactName": "3dviewerLAB-${arch}.${ext}"
+    },
+    "dmg": { "title": "3dviewerLAB" },
+    "win": { "target": ["portable"] },
+    "portable": { "artifactName": "3dviewerLAB-portable.exe" }
+  }
+}

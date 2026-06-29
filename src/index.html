@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3dviewerLAB — 3D Viewer Editor</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- LEFT: tree + drop -->
+    <aside class="panel panel--left">
+      <header class="brand">
+        <div class="brand__mark">◆</div>
+        <div class="brand__text">
+          <h1>3dviewerLAB</h1>
+          <span>3D VIEWER EDITOR</span>
+        </div>
+      </header>
+
+      <div class="select" id="modelSelect">
+        <span class="dot"></span>
+        <span id="modelName">No model</span>
+        <span class="caret">▾</span>
+      </div>
+
+      <nav class="tree" id="tree" aria-label="Object tree"></nav>
+
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone__icon">⬇</div>
+        <p>Drag &amp; drop<br /><b>OBJ, FBX, STEP</b></p>
+        <button class="btn btn--ghost" id="browseBtn">Browse…</button>
+      </div>
+    </aside>
+
+    <!-- CENTER: viewport -->
+    <main class="viewport">
+      <div class="viewport__tabs">
+        <button class="tab is-active" data-view="impact">IMPACT</button>
+        <button class="tab" data-view="details">VIEW DETAILS</button>
+      </div>
+      <canvas id="three"></canvas>
+      <svg id="overlay" class="overlay"></svg>
+      <div class="viewport__loading" id="loading" hidden>
+        <span id="loadingText">Loading…</span>
+      </div>
+      <div class="viewport__toolbar">
+        <button class="mbtn" id="measureBtn" title="Afficher les cotes">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 17 17 3l4 4L7 21l-4-4z"/><path d="m7 13 1.5 1.5M10 10l1.5 1.5M13 7l1.5 1.5"/></svg>
+          MESURER
+        </button>
+        <div class="seg" role="group" aria-label="Mode matière">
+          <button class="mbtn is-on" data-shade="original">ORIGINAL</button>
+          <button class="mbtn" data-shade="gray">GRIS</button>
+          <button class="mbtn" data-shade="metal">MÉTAL</button>
+          <button class="mbtn" data-shade="glass">VERRE</button>
+          <button class="mbtn" data-shade="wire">FILAIRE</button>
+        </div>
+      </div>
+      <div class="hud" id="hud"></div>
+    </main>
+
+    <!-- RIGHT: info + export -->
+    <aside class="panel panel--right" id="infoPanel"></aside>
+  </div>
+
+  <!-- bottom bar -->
+  <footer class="statusbar">
+    <div class="statusbar__group">
+      <label>UNITS</label>
+      <select id="units">
+        <option value="mm">Millimeters</option>
+        <option value="cm">Centimeters</option>
+        <option value="m">Meters</option>
+        <option value="in">Inches</option>
+      </select>
+    </div>
+    <div class="statusbar__group" id="measureInfo"></div>
+    <div class="spacer"></div>
+    <div class="exportwrap">
+      <button class="btn" id="exportBtn">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        EXPORTER
+        <span class="caret">▾</span>
+      </button>
+      <div class="menu" id="exportMenu" hidden>
+        <button data-export="obj">OBJ <span>Wavefront</span></button>
+        <button data-export="fbx">FBX <span>ASCII 7.4</span></button>
+      </div>
+    </div>
+    <button class="btn btn--accent" id="saveAsBtn">ENREGISTRER SOUS…</button>
+  </footer>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
