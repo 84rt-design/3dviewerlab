@@ -21,6 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm          # cache ~/.npm between runs -> faster installs
 
       - name: Install deps
         run: npm ci || npm install
@@ -48,7 +49,7 @@ jobs:
         run: |
           set -o pipefail                      # propagate electron-builder exit, not tee's
           max=6; i=0
-          until npx electron-builder --mac --arm64 2>&1 | tee eb.log; do
+          until npx electron-builder --mac --arm64 --publish never 2>&1 | tee eb.log; do
             i=$((i+1))
             if [ "$i" -ge "$max" ]; then echo "DMG build failed after $max attempts"; exit 1; fi
             echo "::warning::build failed (hdiutil race?), retry $i/$max — clearing stale mounts"
@@ -91,22 +92,12 @@ jobs:
             wait "$PID"; exit 1
           fi
 
-      - name: Upload artifact (zipped by GitHub — fallback)
-        uses: actions/upload-artifact@v4
-        with:
-          name: 3dviewerLAB-macOS
-          path: |
-            release/*.dmg
-            release/*.zip
-          if-no-files-found: error
-
-      # Direct .dmg download (no GitHub zip wrapper) via a rolling Release.
+      # Single upload: direct .dmg download via a rolling Release.
+      # (No actions/upload-artifact — it would upload the same 100MB a 2nd time.)
       - name: Publish DMG to "mac-latest" release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: mac-latest
           name: macOS (latest build)
           prerelease: true
-          files: |
-            release/*.dmg
-            release/*.zip
+          files: release/*.dmg
